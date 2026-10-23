@@ -1,12 +1,28 @@
 """Home Assistant SMN CAP integration."""
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
+from xml.etree.ElementTree import ParseError
+import re
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from .const import DOMAIN, FEED_URL, UPDATE_INTERVAL, MAX_BYTES
 from .parser import rss_links, parse_cap, combine_alerts
+
+_STALE_CAP_RE = re.compile(r'/CAP_(\d{14})_')
+
+def is_historical_link(url, now):
+    """Ignore CAP archives older than 48 hours; never treat these as current data."""
+    match = _STALE_CAP_RE.search(url)
+    if not match:
+        return False
+    try:
+        published = datetime.strptime(match.group(1), '%Y%m%d%H%M%S').replace(tzinfo=timezone.utc)
+    except ValueError:
+        return False
+    return published < now - timedelta(hours=48)
+
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "binary_sensor"]
@@ -32,6 +48,13 @@ class SMNCoordinator(DataUpdateCoordinator):
             links = rss_links(await self._fetch(FEED_URL))
             if not links:
                 raise UpdateFailed("No compatible CAP links; refusing to assume no alerts")
+            now = datetime.now(timezone.utc)
+            historical = sum(is_historical_link(url, now) for url in links)
+            links = [url for url in links if not is_historical_link(url, now)]
+            if not links:
+                raise UpdateFailed(f'Feed contains only {historical} historical CAP links; source freshness not verified')
+            if len(links) > 60:
+                raise UpdateFailed(f'Feed contains {len(links)} recent CAP links; refusing incomplete subset')
             lat = float(self.entry.data["latitude"])
             lon = float(self.entry.data["longitude"])
             location = self.entry.data.get("location", "")
@@ -41,18 +64,19 @@ class SMNCoordinator(DataUpdateCoordinator):
                 async with sem:
                     try:
                         return parse_cap(await self._fetch(link), lat, lon, location)
-                    except (ClientError, asyncio.TimeoutError, ValueError, OSError) as exc:
-                        _LOGGER.warning("CAP fetch failed %s: %s", link, exc)
-                        return None
+                    except (ClientError, asyncio.TimeoutError, ValueError, OSError, ParseError) as exc:
+                        return (link, str(exc))
 
-            results = await asyncio.gather(*(download(link) for link in links[:60]))
-            if any(result is None for result in results):
-                raise UpdateFailed("CAP document unavailable; preserving prior state")
+            results = await asyncio.gather(*(download(link) for link in links))
+            failures = [r for r in results if isinstance(r, tuple)]
+            if failures:
+                _LOGGER.warning("SMN CAP: %d of %d recent documents failed; example %s: %s", len(failures), len(links), failures[0][0], failures[0][1])
+                raise UpdateFailed(f"{len(failures)} current CAP documents could not be verified")
             return {
                 "alerts": combine_alerts([a for result in results for a in result]),
                 "checked_at": datetime.now(timezone.utc).isoformat()
             }
-        except (ClientError, asyncio.TimeoutError, ValueError, OSError) as exc:
+        except (ClientError, asyncio.TimeoutError, ValueError, OSError, ParseError) as exc:
             raise UpdateFailed(str(exc)) from exc
 
 async def async_setup_entry(hass, entry):
