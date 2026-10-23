@@ -53,3 +53,15 @@ python -m compileall -q custom_components
 ## Licencias y atribuciones
 
 Datos meteorológicos: Servicio Meteorológico Nacional de Argentina. Sin afiliación con el SMN. Antes de distribuir derivaciones de terceros, verificar condiciones de sus licencias.
+
+## Incidencia detectada 23/10/2026 (v0.1.1, experimental)
+
+El RSS publicó enlaces a documentos de septiembre que devuelven HTTP 404, y en una consulta devolvió XML incompleto (ParseError). Se cambió el comportamiento:
+
+1. Archivos `CAP_YYYYMMDDHHMMSS_` con fecha de más de 48 horas no se descargan. Este filtro usa la fecha del nombre y **no valida** la vigencia CAP.
+2. Si solo hay enlaces históricos, la fuente se declara **no disponible**: no se informa falsamente 'sin alertas'.
+3. El error XML ahora se controla como un fallo de actualización de datos, preservando el estado anterior sin considerarlo información fresca.
+4. Los errores de documentos recientes se agrupan en una sola advertencia por ciclo, en lugar de generar decenas de registros 404 individuales.
+5. Si hay más de 60 enlaces recientes, se declara no disponible en lugar de procesar solo una parte.
+
+**Pendiente crítico:** contrastar el RSS real con el feed CAP registrado en la OMM (`https://ssl.smn.gob.ar/CAP/AR.php`), determinar si el feed contiene archivos históricos, qué fechas son confiables y cómo relacionar alertas geográficas. Hasta completar esa validación, la integración puede indicar `unavailable` y no debe utilizarse como única fuente de protección.
