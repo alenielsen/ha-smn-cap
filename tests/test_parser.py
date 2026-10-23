@@ -28,6 +28,16 @@ class TestParser(unittest.TestCase):
         with self.assertRaises(ValueError):
             parser.rss_links(b"<!DOCTYPE foo><rss/>")
 
+    def test_truncated_feed_raises_parse_error(self):
+        from xml.etree.ElementTree import ParseError
+        with self.assertRaises(ParseError):
+            parser.rss_links(b"<rss><channel><item><link>https://ssl.smn.gob.ar/feeds/CAP/a.xml</link>")
+
+    def test_non_xml_response_raises_parse_error(self):
+        from xml.etree.ElementTree import ParseError
+        with self.assertRaises(ParseError):
+            parser.rss_links(b"<html><body>Just a moment")
+
     def test_update(self):
         a = dict(id="old", sent="2026-10-23T10:00:00Z", msg_type="Alert", references="", event="Tormentas", headline="Tormentas")
         b = dict(a, id="new", sent="2026-10-23T11:00:00Z", msg_type="Update", references="smn,old,2026-10-23T10:00:00Z")
