@@ -23,6 +23,17 @@ class TestParser(unittest.TestCase):
         feed = b'<rss><channel><item><link>https://ssl.smn.gob.ar/CAP/alert.xml</link></item><item><link>https://example.com/CAP/alert.xml</link></item></channel></rss>'
         self.assertEqual(parser.rss_links(feed), ["https://ssl.smn.gob.ar/CAP/alert.xml"])
 
+    def test_97_documents_not_truncated(self):
+        links = "".join(f"<item><link>https://ssl.smn.gob.ar/CAP/{i}.xml</link></item>" for i in range(97))
+        feed = ("<rss><channel>" + links + "</channel></rss>").encode()
+        self.assertEqual(len(parser.rss_links(feed)), 97)
+
+    def test_more_than_200_documents_explicit_error(self):
+        links = "".join(f"<item><link>https://ssl.smn.gob.ar/CAP/{i}.xml</link></item>" for i in range(201))
+        feed = ("<rss><channel>" + links + "</channel></rss>").encode()
+        with self.assertRaisesRegex(ValueError, "exceeds 200"):
+            parser.rss_links(feed)
+
     def test_polygon_in_and_out(self):
         at = datetime(2026, 10, 23, 15, tzinfo=timezone.utc)
         self.assertEqual(len(parser.parse_cap(CAP, -38.6, -58.75, "", at)), 1)
