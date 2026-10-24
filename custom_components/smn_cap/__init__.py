@@ -94,7 +94,9 @@ class SMNCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(str(exc)) from exc
 
 async def async_setup_entry(hass, entry):
-    await hass.http.async_register_static_paths([StaticPathConfig("/smn_cap/smn-cap-card.js", str(Path(__file__).parent / "www" / "smn-cap-card.js"), cache_headers=False)])
+    if not hass.data.get(f"{DOMAIN}_card_registered"):
+        await hass.http.async_register_static_paths([StaticPathConfig("/smn_cap/smn-cap-card.js", str(Path(__file__).parent / "www" / "smn-cap-card.js"), cache_headers=False)])
+        hass.data[f"{DOMAIN}_card_registered"] = True
     coordinator = SMNCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
