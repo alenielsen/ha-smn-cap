@@ -22,7 +22,7 @@ class SMNBase(CoordinatorEntity, SensorEntity):
 
     @property
     def extra_state_attributes(self):
-        return {"alerts": self._alerts[:15], "last_success": self.coordinator.data["checked_at"], "source": "SMN - CAP"}
+        return {"alerts": self._alerts[:30], "last_success": self.coordinator.data["checked_at"], "source": "SMN - CAP"}
 
 class SMNCount(SMNBase):
     _attr_name = "Cantidad de alertas"
