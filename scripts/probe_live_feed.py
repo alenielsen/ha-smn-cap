@@ -46,3 +46,26 @@ for source in sources:
         print("SAMPLE_RESULTS",dict(statuses))
     except Exception as exc:
         print("SOURCE_FAILURE",repr(exc))
+
+print("FULL_FEED_VALIDATION_START",flush=True)
+try:
+    source=sources[0]
+    links=p.rss_links(fetch(source))
+    counters=Counter()
+    found=[]
+    now=dt.datetime.now(dt.timezone.utc)
+    for ix,url in enumerate(links):
+        try:
+            data=fetch(url)
+            items=p.parse_cap(data,-38.5545,-58.7396,"Necochea",now=now)
+            counters["ok"]+=1
+            for a in items:
+                found.append(a)
+        except Exception as exc:
+            counters["error"]+=1
+            if counters["error"]<=5:
+                print("FULL_ERROR",ix,repr(exc),url)
+    print("FULL_TOTAL",len(links),"COUNTS",dict(counters),
+          "NECOCHEA_ALERTS",len(p.combine_alerts(found)),flush=True)
+except Exception as exc:
+    print("FULL_FATAL",repr(exc),flush=True)
