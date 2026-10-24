@@ -31,6 +31,7 @@ class SMNCoordinator(DataUpdateCoordinator):
     def __init__(self, hass, entry):
         super().__init__(hass, _LOGGER, name=DOMAIN, update_interval=UPDATE_INTERVAL)
         self.entry = entry
+        self._document_cache = {}  # url -> (timestamp, XML bytes), bounded below
 
     async def _fetch(self, url):
         session = async_get_clientsession(self.hass)
@@ -55,6 +56,9 @@ class SMNCoordinator(DataUpdateCoordinator):
                 raise UpdateFailed(f'Feed contains only {historical} historical CAP links; source freshness not verified')
             if len(links) > 200:
                 raise UpdateFailed(f'Feed contains {len(links)} recent CAP links, exceeding the 200-document safety limit')
+            # Prune URLs that the feed no longer advertises, preserving bounded memory.
+            active_links = set(links)
+            self._document_cache = {k: v for k, v in self._document_cache.items() if k in active_links}
             lat = float(self.entry.data["latitude"])
             lon = float(self.entry.data["longitude"])
             location = self.entry.data.get("location", "")
@@ -63,7 +67,15 @@ class SMNCoordinator(DataUpdateCoordinator):
             async def download(link):
                 async with sem:
                     try:
-                        return parse_cap(await self._fetch(link), lat, lon, location)
+                        cached = self._document_cache.get(link)
+                        if cached and now - cached[0] < timedelta(minutes=30):
+                            payload = cached[1]
+                        else:
+                            payload = await self._fetch(link)
+                        parsed = parse_cap(payload, lat, lon, location, now=now)
+                        if not cached or now - cached[0] >= timedelta(minutes=30):
+                            self._document_cache[link] = (now, payload)
+                        return parsed
                     except (ClientError, asyncio.TimeoutError, ValueError, OSError, ParseError) as exc:
                         return (link, str(exc))
 
