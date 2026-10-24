@@ -1,6 +1,6 @@
 # SMN Argentina — Alertas CAP para Home Assistant
 
-> **Experimental (v0.1.4).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
+> **Experimental (v0.2.0).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
 
 Integración personalizada para Home Assistant que consulta cada cinco minutos el feed CAP del Servicio Meteorológico Nacional argentino, sin JWT ni Selenium.
 
@@ -87,3 +87,24 @@ Para reducir las consultas, la integración cachea durante 30 minutos los docume
 Prueba reproducible: [GitHub Actions, diagnóstico de los 97 documentos](https://github.com/alenielsen/ha-smn-cap/actions/runs/40051266363).
 
 **No se ha instalado ni probado aún en una instancia real de Home Assistant desde este entorno. No hay garantía posible de disponibilidad al 100 % del SMN, de internet ni de entrega inmediata de alertas.**
+
+## Tarjeta Lovelace con información completa (v0.2.0)
+
+1. Actualizá la integración y reiniciá Home Assistant.
+2. En **Configuración → Paneles de control → Recursos** (activá modo avanzado en el perfil si no aparece), agregá el recurso JavaScript:
+   - URL: `/smn_cap/smn-cap-card.js?v=020`
+   - Tipo: **Módulo JavaScript**.
+3. Editá tu dashboard, agregá una **Tarjeta manual** y pegá:
+
+```yaml
+type: custom:smn-cap-card
+entity: sensor.smn_alertas_cap_cantidad_de_alertas
+title: Alertas meteorológicas
+location: Necochea
+```
+
+**Importante:** sustituí el ID de entidad por el que figura realmente en **Herramientas para desarrolladores → Estados**. El ID anterior es ilustrativo.
+
+La tarjeta muestra los mensajes de alerta incluidos en el sensor, horarios de vigencia, detalles e instrucciones CAP, y enlace a la información oficial. Distingue estados vigentes y futuros utilizando la hora del navegador.
+
+**Advertencias:** `severity` es la severidad CAP; no es una equivalencia validada con colores del SMN. La integración todavía no se probó end-to-end en Home Assistant real. Si el proveedor falla se mostrará indisponibilidad en lugar de tranquilidad falsa. El sensor expone un máximo de 30 alertas para evitar atributos de tamaño excesivo. El recurso JavaScript se añade manualmente una vez por dashboard HA.
