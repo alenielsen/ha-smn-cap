@@ -58,7 +58,10 @@ class SharedCAPFeed:
             if self.retry_after and now < self.retry_after:
                 raise UpdateFailed("CAP upstream rate limit; retry pending")
             try:
-                links = rss_links(await self._fetch(FEED_URL))
+                try:
+                    links = rss_links(await self._fetch(FEED_URL))
+                except ParseError as err:
+                    raise UpdateFailed("Malformed XML in CAP index") from err
                 if not links:
                     raise UpdateFailed("CAP index contains no supported links")
                 links = [link for link in links if not is_historical_link(link, now)]
@@ -72,7 +75,10 @@ class SharedCAPFeed:
                         continue
                     try:
                         body = await self._fetch(url)
-                        root = xml(body)
+                        try:
+                            root = xml(body)
+                        except ParseError as err:
+                            raise UpdateFailed("Malformed CAP XML: " + url.rsplit("/", 1)[-1][:90]) from err
                         if tag(root) != "alert":
                             raise ValueError("CAP document is not an alert")
                         self.documents[url] = body
