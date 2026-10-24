@@ -15,6 +15,14 @@ class TestParser(unittest.TestCase):
     def test_feed_links(self):
         self.assertEqual(parser.rss_links(RSS), ["https://ssl.smn.gob.ar/feeds/CAP/a.xml"])
 
+    def test_cap_registered_feed_links(self):
+        atom = b'<feed xmlns="http://www.w3.org/2005/Atom"><entry><link href="https://ssl.smn.gob.ar/feeds/CAP/xml_generados/CAP_20261023170000_Tormenta.xml" /></entry></feed>'
+        self.assertEqual(parser.rss_links(atom), ["https://ssl.smn.gob.ar/feeds/CAP/xml_generados/CAP_20261023170000_Tormenta.xml"])
+
+    def test_allow_cap_path_and_block_foreign(self):
+        feed = b'<rss><channel><item><link>https://ssl.smn.gob.ar/CAP/alert.xml</link></item><item><link>https://example.com/CAP/alert.xml</link></item></channel></rss>'
+        self.assertEqual(parser.rss_links(feed), ["https://ssl.smn.gob.ar/CAP/alert.xml"])
+
     def test_polygon_in_and_out(self):
         at = datetime(2026, 10, 23, 15, tzinfo=timezone.utc)
         self.assertEqual(len(parser.parse_cap(CAP, -38.6, -58.75, "", at)), 1)
