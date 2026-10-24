@@ -1,7 +1,7 @@
 {
   "domain": "smn_cap",
   "name": "SMN Argentina - Alertas CAP",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "documentation": "https://github.com/alenielsen/ha-smn-cap",
   "issue_tracker": "https://github.com/alenielsen/ha-smn-cap/issues",
   "codeowners": [],
