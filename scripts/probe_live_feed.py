@@ -37,6 +37,10 @@ for source in sources:
                 if p.tag(root)=="alert":
                     print("CAP_SAMPLE",p.value(root,"identifier"),p.value(root,"sent"),
                         p.value(root,"status"),p.value(root,"msgType"))
+                    for info in p.children(root,"info")[:1]:
+                        print("CAP_INFO", {k:p.value(info,k)[:150] for k in ("event","severity","effective","expires")})
+                        for area in p.children(info,"area")[:2]:
+                            print("CAP_AREA",{k:p.value(area,k)[:150] for k in ("areaDesc","polygon","circle")}, "geocodes",[(p.value(g,"valueName"),p.value(g,"value")) for g in p.children(area,"geocode")][:3])
             except Exception as exc:
                 statuses[type(exc).__name__+":"+str(exc)[:70]]+=1
         print("SAMPLE_RESULTS",dict(statuses))
