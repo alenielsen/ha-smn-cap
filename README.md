@@ -1,6 +1,6 @@
 # SMN Argentina — Alertas CAP para Home Assistant
 
-> **Experimental (v0.2.1).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
+> **Experimental (v0.2.2).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
 
 Integración personalizada para Home Assistant que consulta cada cinco minutos el feed CAP del Servicio Meteorológico Nacional argentino, sin JWT ni Selenium.
 
@@ -109,8 +109,14 @@ La tarjeta muestra los mensajes de alerta incluidos en el sensor, horarios de vi
 
 **Advertencias:** `severity` es la severidad CAP; no es una equivalencia validada con colores del SMN. La integración todavía no se probó end-to-end en Home Assistant real. Si el proveedor falla se mostrará indisponibilidad en lugar de tranquilidad falsa. El sensor expone un máximo de 30 alertas para evitar atributos de tamaño excesivo. El recurso JavaScript se añade manualmente una vez por dashboard HA.
 
-## Tarjeta no encontrada — corrección v0.2.1
+## Tarjeta no encontrada — corrección v0.2.2
 
 Si Home Assistant indica `Custom element doesn't exist: smn-cap-card`, comprobá que el recurso JS esté registrado y responda. Abrí `https://TU_HOME_ASSISTANT/smn_cap/smn-cap-card.js?v=021` en el navegador (cambiá el host). Debe devolver JavaScript, no 404 ni HTML. Registrá el recurso **Módulo JavaScript** con la URL exacta `/smn_cap/smn-cap-card.js?v=021` y recargá el navegador.
 
-Desde v0.2.1 el recurso está registrado al cargarse la integración, incluso si el primer refresh del feed CAP falla. Para activarlo luego de actualizar, reiniciá HA y recargá el navegador con Ctrl+F5. El nombre de la tarjeta en YAML sigue siendo `type: custom:smn-cap-card`.
+Desde v0.2.2 el recurso está registrado al cargarse la integración, incluso si el primer refresh del feed CAP falla. Para activarlo luego de actualizar, reiniciá HA y recargá el navegador con Ctrl+F5. El nombre de la tarjeta en YAML sigue siendo `type: custom:smn-cap-card`.
+
+## Corrección 0.2.2: varias ciudades y HTTP 429
+
+Cada ciudad creaba previamente un coordinador independiente que descargaba ~97 documentos al arrancar. Esto multiplicaba las solicitudes al SMN y provocaba fallos 429 en altas sucesivas. Ahora existe **un solo lector compartido para todas las ciudades** en cada instancia de Home Assistant. Las lecturas del índice y de documentos son serializadas bajo un único bloqueo; los XML se conservan en memoria mientras el índice los siga anunciando. Los documentos nuevos se descargan secuencialmente con una pausa de 150 ms entre ellos. En un 429 se suspende el reintento 10 minutos. Los errores no se transforman en 'sin alertas'.
+
+**Limitación:** una instalación nueva, sin caché, necesita descargar todos los documentos vigentes. Si el SMN devuelve 429, queda temporalmente indisponible. El resultado no confirma que el servidor acepte todas las descargas en producción. Agregar una ciudad ya no debería iniciar otra descarga completa dentro del ciclo de actualización compartido.
