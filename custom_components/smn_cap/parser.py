@@ -41,8 +41,8 @@ def rss_links(payload):
             and not u.password and u.port in (None, 443) and (u.path.startswith("/feeds/CAP/") or u.path.startswith("/CAP/"))
             and u.path.lower().endswith(".xml") and link not in result):
             result.append(link)
-        if len(result) >= 100:
-            break
+        if len(result) > 200:
+            raise ValueError("Feed exceeds 200 supported document links")
     return result
 
 def in_polygon(lat, lon, polygon):
