@@ -1,0 +1,38 @@
+name: Home Assistant isolated smoke test
+on:
+  push:
+    paths:
+      - ".github/workflows/ha-smoke.yml"
+      - "custom_components/**"
+      - "tests/test_ha_smoke.py"
+  workflow_dispatch:
+jobs:
+  ha-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Create isolated virtualenv and install Home Assistant
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install --disable-pip-version-check 'homeassistant>=2025.1'
+      - name: Smoke test actual Home Assistant imports
+        run: |
+          .venv/bin/python - <<'PY'
+          import homeassistant
+          from homeassistant.components.http import StaticPathConfig
+          from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+          import custom_components.smn_cap as integration
+          import custom_components.smn_cap.config_flow as flow
+          import custom_components.smn_cap.sensor as sensor
+          import custom_components.smn_cap.binary_sensor as binary_sensor
+          print('HOME_ASSISTANT_IMPORTS_PASS')
+          print('INTEGRATION_PLATFORMS',integration.PLATFORMS)
+          PY
+      - name: Unit tests and JS syntax
+        run: |
+          .venv/bin/python -m unittest discover -s tests -v
+          node --check custom_components/smn_cap/www/smn-cap-card.js
