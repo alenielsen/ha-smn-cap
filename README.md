@@ -1,6 +1,6 @@
 # SMN Argentina — Alertas CAP para Home Assistant
 
-> **Experimental (v0.1.3).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
+> **Experimental (v0.1.4).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
 
 Integración personalizada para Home Assistant que consulta cada cinco minutos el feed CAP del Servicio Meteorológico Nacional argentino, sin JWT ni Selenium.
 
@@ -75,3 +75,15 @@ El feed `rss_alertaCAP_nuevo.xml` devolvió 99 enlaces históricos. Se cambió l
 ## 23/10/2026 — 97 documentos CAP recientes
 
 El feed CAP registrado por la OMM devolvió 97 enlaces recientes. La limitación local de 60 documentos bloqueaba su procesamiento aunque no existía una limitación CAP equivalente. Se elevó el límite interno a 200, sin descartar entradas dentro de ese rango, y se eliminó la truncación silenciosa del parser RSS a 100 enlaces. Continúan el límite de concurrencia (4), los tiempos de espera y el fallo seguro ante documentos no verificables. **Advertencia:** el primer arranque puede requerir hasta 97 solicitudes HTTP; esto es un parche experimental, no un diseño optimizado. La ejecución contra el feed real sigue pendiente.
+
+## Verificación externa de datos CAP (GitHub Actions, 24/10/2026 UTC)
+
+Se probó el feed principal `https://ssl.smn.gob.ar/CAP/AR.php` desde el runner de GitHub Actions. Respondió HTTP 200, entregó un RSS válido con **97 enlaces**, y los 97 documentos se descargaron y procesaron como XML CAP sin error. Para coordenadas de referencia aproximadas de Necochea (-38.5545, -58.7396), el procesamiento indicó 0 alertas vigentes en ese instante. **Ese resultado no confirma que efectivamente no hubiese una alerta del SMN para la ciudad**: falta contraste con el mapa oficial y una validación en Home Assistant real.
+
+El feed obsoleto `rss_alertaCAP_nuevo.xml` mantiene 99 enlaces, con documentos de septiembre que devolvieron 404. **No debe utilizarse como respaldo**.
+
+Para reducir las consultas, la integración cachea durante 30 minutos los documentos XML previamente procesados, sin cachear el cálculo de vigencia. El feed índice se sigue consultando cada 5 minutos y se descargan de inmediato URLs nuevas.
+
+Prueba reproducible: [GitHub Actions, diagnóstico de los 97 documentos](https://github.com/alenielsen/ha-smn-cap/actions/runs/40051266363).
+
+**No se ha instalado ni probado aún en una instancia real de Home Assistant desde este entorno. No hay garantía posible de disponibilidad al 100 % del SMN, de internet ni de entrega inmediata de alertas.**
