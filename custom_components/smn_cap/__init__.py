@@ -4,6 +4,8 @@ import logging
 from datetime import datetime, timezone, timedelta
 from xml.etree.ElementTree import ParseError
 import re
+from pathlib import Path
+from homeassistant.components.http import StaticPathConfig
 from aiohttp import ClientError, ClientTimeout
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
@@ -92,6 +94,7 @@ class SMNCoordinator(DataUpdateCoordinator):
             raise UpdateFailed(str(exc)) from exc
 
 async def async_setup_entry(hass, entry):
+    await hass.http.async_register_static_paths([StaticPathConfig("/smn_cap/smn-cap-card.js", str(Path(__file__).parent / "www" / "smn-cap-card.js"), cache_headers=False)])
     coordinator = SMNCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
