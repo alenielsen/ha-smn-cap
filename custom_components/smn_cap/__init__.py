@@ -53,8 +53,8 @@ class SMNCoordinator(DataUpdateCoordinator):
             links = [url for url in links if not is_historical_link(url, now)]
             if not links:
                 raise UpdateFailed(f'Feed contains only {historical} historical CAP links; source freshness not verified')
-            if len(links) > 60:
-                raise UpdateFailed(f'Feed contains {len(links)} recent CAP links; refusing incomplete subset')
+            if len(links) > 200:
+                raise UpdateFailed(f'Feed contains {len(links)} recent CAP links, exceeding the 200-document safety limit')
             lat = float(self.entry.data["latitude"])
             lon = float(self.entry.data["longitude"])
             location = self.entry.data.get("location", "")
