@@ -69,3 +69,29 @@ try:
           "NECOCHEA_ALERTS",len(p.combine_alerts(found)),flush=True)
 except Exception as exc:
     print("FULL_FATAL",repr(exc),flush=True)
+
+print("THREE_LOCATIONS_VALIDATION", flush=True)
+LOCATIONS = {
+    "Anelo_Neuquen": (-38.354, -68.790, "Añelo"),
+    "General_Obligado_Dept_Center": (-28.75, -59.75, "General Obligado"),
+    "General_Obligado_Reconquista": (-29.14515, -59.65107, "Reconquista"),
+    "Obera_Misiones": (-27.487, -55.120, "Oberá"),
+}
+try:
+    feed_data=fetch(sources[0])
+    urls=p.rss_links(feed_data)
+    all_docs=[]
+    for url in urls:
+        try:
+            all_docs.append(fetch(url))
+        except Exception as exc:
+            print("LOCATION_DOCUMENT_ERROR",repr(exc),url)
+    print("LOCATION_DOCUMENTS",len(all_docs),len(urls))
+    for name,(lat,lon,location) in LOCATIONS.items():
+        raw=[a for doc in all_docs for a in p.parse_cap(doc,lat,lon,location)]
+        combined=p.combine_alerts(raw)
+        print("LOCATION_RESULT",name,"RAW",len(raw),"AFTER_UPDATES",len(combined))
+        for a in combined[:8]:
+            print("LOCATION_ALERT",name,a["id"],a["event"],a["severity"],a["effective"],a["expires"],a["areas"][:1])
+except Exception as exc:
+    print("LOCATION_FATAL",repr(exc))
