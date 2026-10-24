@@ -38,7 +38,7 @@ def rss_links(payload):
             link = next((c.get("href", "") for c in item if tag(c) == "link"), "")
         u = urlparse(link)
         if (u.scheme == "https" and u.hostname == "ssl.smn.gob.ar" and not u.username
-            and not u.password and u.port in (None, 443) and u.path.startswith("/feeds/")
+            and not u.password and u.port in (None, 443) and (u.path.startswith("/feeds/CAP/") or u.path.startswith("/CAP/"))
             and u.path.lower().endswith(".xml") and link not in result):
             result.append(link)
         if len(result) >= 100:
