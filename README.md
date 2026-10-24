@@ -1,6 +1,6 @@
 # SMN Argentina — Alertas CAP para Home Assistant
 
-> **Experimental (v0.2.0).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
+> **Experimental (v0.2.1).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
 
 Integración personalizada para Home Assistant que consulta cada cinco minutos el feed CAP del Servicio Meteorológico Nacional argentino, sin JWT ni Selenium.
 
@@ -108,3 +108,9 @@ location: Necochea
 La tarjeta muestra los mensajes de alerta incluidos en el sensor, horarios de vigencia, detalles e instrucciones CAP, y enlace a la información oficial. Distingue estados vigentes y futuros utilizando la hora del navegador.
 
 **Advertencias:** `severity` es la severidad CAP; no es una equivalencia validada con colores del SMN. La integración todavía no se probó end-to-end en Home Assistant real. Si el proveedor falla se mostrará indisponibilidad en lugar de tranquilidad falsa. El sensor expone un máximo de 30 alertas para evitar atributos de tamaño excesivo. El recurso JavaScript se añade manualmente una vez por dashboard HA.
+
+## Tarjeta no encontrada — corrección v0.2.1
+
+Si Home Assistant indica `Custom element doesn't exist: smn-cap-card`, comprobá que el recurso JS esté registrado y responda. Abrí `https://TU_HOME_ASSISTANT/smn_cap/smn-cap-card.js?v=021` en el navegador (cambiá el host). Debe devolver JavaScript, no 404 ni HTML. Registrá el recurso **Módulo JavaScript** con la URL exacta `/smn_cap/smn-cap-card.js?v=021` y recargá el navegador.
+
+Desde v0.2.1 el recurso está registrado al cargarse la integración, incluso si el primer refresh del feed CAP falla. Para activarlo luego de actualizar, reiniciá HA y recargá el navegador con Ctrl+F5. El nombre de la tarjeta en YAML sigue siendo `type: custom:smn-cap-card`.
