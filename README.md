@@ -1,6 +1,6 @@
 # SMN Argentina — Alertas CAP para Home Assistant
 
-> **Experimental (v0.1.0).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
+> **Experimental (v0.1.2).** No validado aún contra Home Assistant real ni el RSS CAP en vivo. No usar como única fuente de alertas de emergencia.
 
 Integración personalizada para Home Assistant que consulta cada cinco minutos el feed CAP del Servicio Meteorológico Nacional argentino, sin JWT ni Selenium.
 
@@ -65,3 +65,9 @@ El RSS publicó enlaces a documentos de septiembre que devuelven HTTP 404, y en 
 5. Si hay más de 60 enlaces recientes, se declara no disponible en lugar de procesar solo una parte.
 
 **Pendiente crítico:** contrastar el RSS real con el feed CAP registrado en la OMM (`https://ssl.smn.gob.ar/CAP/AR.php`), determinar si el feed contiene archivos históricos, qué fechas son confiables y cómo relacionar alertas geográficas. Hasta completar esa validación, la integración puede indicar `unavailable` y no debe utilizarse como única fuente de protección.
+
+## 23/10/2026 — fuente CAP registrada por la OMM
+
+El feed `rss_alertaCAP_nuevo.xml` devolvió 99 enlaces históricos. Se cambió la fuente principal a `https://ssl.smn.gob.ar/CAP/AR.php`, publicada en el [registro de autoridades de la OMM](https://alertingauthority.wmo.int/authorities.php?recId=4). El monitor independiente KDE reportó recepción reciente, pero **todavía no pudimos confirmar directamente desde este entorno el XML ni el contenido en vivo de `AR.php`**. Se amplió la extracción de enlaces a documentos ubicados bajo `/CAP/` y `/feeds/CAP/` y se añadieron pruebas de regresión basadas en ejemplos sintéticos.
+
+**Estado: EXPERIMENTAL / pendiente validar**. Si después de actualizar sigue sin inicializar, recoger la primera línea del error y consultar el estado de `https://www.smn.gob.ar/alertas`. No usar como fuente exclusiva de seguridad.
